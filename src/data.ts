@@ -20,6 +20,24 @@ export interface FloorData {
   tenant: string
 }
 
+export interface EnterpriseFloorLocation {
+  buildingId: string
+  buildingName: string
+  buildingColor: string
+  floor: number
+  floorName: string
+  occupancy: number
+  maxOccupancy: number
+  tenantDetail: string
+}
+
+export interface EnterpriseData {
+  name: string
+  locations: EnterpriseFloorLocation[]
+  totalFloors: number
+  totalBuildings: number
+}
+
 export interface ParkStats {
   totalOccupancy: number
   todayEnergy: number
@@ -184,4 +202,50 @@ export const parkStats: ParkStats = {
 export const viewConfigs = {
   bird: { position: [35, 40, 35] as [number, number, number], target: [0, 0, 0] as [number, number, number] },
   ground: { position: [30, 8, 30] as [number, number, number], target: [0, 2, 0] as [number, number, number] },
+}
+
+export function getEnterprisesWithLocations(buildingList: BuildingData[]): EnterpriseData[] {
+  const enterpriseMap = new Map<string, EnterpriseFloorLocation[]>()
+
+  buildingList.forEach((building) => {
+    building.floorsData.forEach((floor) => {
+      const tenantNames = floor.tenant
+        .replace(/·/g, '/')
+        .split(/[\/、]/)
+        .map((t) => t.trim())
+        .filter((t) => t && !['物业中心', '共享办公', '共享空间', '会议中心', '行政办公', '空中花园', '屋顶花园', '培训中心', '展厅', '学术报告厅', '行政服务大厅', '联合实验室', '餐饮中心', '健身房', '瑜伽馆'].includes(t))
+
+      tenantNames.forEach((tenant) => {
+        if (!enterpriseMap.has(tenant)) {
+          enterpriseMap.set(tenant, [])
+        }
+        enterpriseMap.get(tenant)!.push({
+          buildingId: building.id,
+          buildingName: building.name,
+          buildingColor: building.color,
+          floor: floor.floor,
+          floorName: floor.name,
+          occupancy: floor.occupancy,
+          maxOccupancy: floor.maxOccupancy,
+          tenantDetail: floor.tenant,
+        })
+      })
+    })
+  })
+
+  const result: EnterpriseData[] = []
+  enterpriseMap.forEach((locations, name) => {
+    const buildings = new Set(locations.map((l) => l.buildingId))
+    result.push({
+      name,
+      locations: locations.sort((a, b) => {
+        if (a.buildingId !== b.buildingId) return a.buildingId.localeCompare(b.buildingId)
+        return a.floor - b.floor
+      }),
+      totalFloors: locations.length,
+      totalBuildings: buildings.size,
+    })
+  })
+
+  return result.sort((a, b) => a.name.localeCompare(b.name, 'zh'))
 }

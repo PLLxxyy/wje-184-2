@@ -143,6 +143,33 @@
         margin-left: auto;
       }
 
+      .sidebar-tabs {
+        display: flex;
+        border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+      }
+
+      .sidebar-tab {
+        flex: 1;
+        padding: 14px 0;
+        text-align: center;
+        font-size: 13px;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 2px solid transparent;
+        letter-spacing: 1px;
+      }
+
+      .sidebar-tab:hover {
+        color: #94a3b8;
+      }
+
+      .sidebar-tab.active {
+        color: #60a5fa;
+        border-bottom-color: #60a5fa;
+        font-weight: 600;
+      }
+
       /* 右上角视角切换 */
       .view-switcher {
         position: absolute;
@@ -446,6 +473,75 @@
 
       .back-btn:hover {
         background: rgba(59, 130, 246, 0.3);
+      }
+
+      /* 企业信息面板 */
+      .enterprise-panel {
+        width: 340px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+      }
+
+      .enterprise-panel::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .enterprise-panel::-webkit-scrollbar-thumb {
+        background: rgba(59, 130, 246, 0.3);
+        border-radius: 2px;
+      }
+
+      .enterprise-locations {
+        margin-top: 12px;
+      }
+
+      .enterprise-building-group {
+        margin-top: 12px;
+        padding: 12px;
+        background: rgba(59, 130, 246, 0.06);
+        border-radius: 8px;
+        border: 1px solid rgba(59, 130, 246, 0.12);
+      }
+
+      .enterprise-building-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .enterprise-building-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .enterprise-building-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #e0e6f0;
+      }
+
+      .enterprise-floors {
+        padding-top: 8px;
+        border-top: 1px solid rgba(59, 130, 246, 0.08);
+      }
+
+      .locate-btn {
+        padding: 4px 12px;
+        background: rgba(139, 92, 246, 0.2);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 4px;
+        color: #a78bfa;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+      }
+
+      .locate-btn:hover {
+        background: rgba(139, 92, 246, 0.35);
+        color: #c4b5fd;
       }
 
       /* Tooltip for 3D hover */

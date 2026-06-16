@@ -1,14 +1,19 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import ParkScene from './components/Scene'
-import { buildings, parkStats, BuildingData } from './data'
+import { buildings, parkStats, BuildingData, EnterpriseData, getEnterprisesWithLocations } from './data'
 
 type ViewMode = 'bird' | 'ground' | 'inside'
+type SidebarMode = 'building' | 'enterprise'
 
 export default function App() {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingData | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('bird')
   const [targetBuilding, setTargetBuilding] = useState<BuildingData | null>(null)
   const [hoveredBuilding, setHoveredBuilding] = useState<string | null>(null)
+  const [sidebarMode, setSidebarMode] = useState<SidebarMode>('building')
+  const [selectedEnterprise, setSelectedEnterprise] = useState<EnterpriseData | null>(null)
+
+  const enterprises = useMemo(() => getEnterprisesWithLocations(buildings), [])
 
   const handleSelectBuilding = useCallback((building: BuildingData | null) => {
     setSelectedBuilding(building)
@@ -46,6 +51,37 @@ export default function App() {
     }
   }, [selectedBuilding])
 
+  const handleSidebarModeChange = useCallback((mode: SidebarMode) => {
+    setSidebarMode(mode)
+    setSelectedBuilding(null)
+    setSelectedEnterprise(null)
+    setViewMode('bird')
+    setTargetBuilding(null)
+  }, [])
+
+  const handleSelectEnterprise = useCallback((enterprise: EnterpriseData | null) => {
+    setSelectedEnterprise(enterprise)
+    setSelectedBuilding(null)
+    if (enterprise) {
+      setViewMode('bird')
+      setTargetBuilding(null)
+    }
+  }, [])
+
+  const handleCloseEnterprisePanel = useCallback(() => {
+    setSelectedEnterprise(null)
+  }, [])
+
+  const handleLocateBuilding = useCallback((buildingId: string) => {
+    const building = buildings.find((b) => b.id === buildingId)
+    if (building) {
+      setSelectedBuilding(building)
+      setTargetBuilding(building)
+      setSelectedEnterprise(null)
+      setViewMode('bird')
+    }
+  }, [])
+
   return (
     <div className="app-container">
       {/* Header */}
@@ -67,26 +103,55 @@ export default function App() {
           />
         </div>
 
-        {/* Left sidebar - Building list */}
+        {/* Left sidebar */}
         <div className="building-list">
-          <div className="building-list-header">楼栋列表</div>
-          <div className="building-list-items">
-            {buildings.map((b) => (
-              <div
-                key={b.id}
-                className={`building-item ${selectedBuilding?.id === b.id ? 'active' : ''}`}
-                onClick={() => handleBuildingListClick(b)}
-              >
-                <div className="building-item-dot" style={{ background: b.color }} />
-                <span className="building-item-name">{b.name}</span>
-                <span className="building-item-type">{b.type}</span>
-              </div>
-            ))}
+          <div className="sidebar-tabs">
+            <div
+              className={`sidebar-tab ${sidebarMode === 'building' ? 'active' : ''}`}
+              onClick={() => handleSidebarModeChange('building')}
+            >
+              楼栋列表
+            </div>
+            <div
+              className={`sidebar-tab ${sidebarMode === 'enterprise' ? 'active' : ''}`}
+              onClick={() => handleSidebarModeChange('enterprise')}
+            >
+              企业名录
+            </div>
           </div>
+          {sidebarMode === 'building' ? (
+            <div className="building-list-items">
+              {buildings.map((b) => (
+                <div
+                  key={b.id}
+                  className={`building-item ${selectedBuilding?.id === b.id ? 'active' : ''}`}
+                  onClick={() => handleBuildingListClick(b)}
+                >
+                  <div className="building-item-dot" style={{ background: b.color }} />
+                  <span className="building-item-name">{b.name}</span>
+                  <span className="building-item-type">{b.type}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="building-list-items">
+              {enterprises.map((e) => (
+                <div
+                  key={e.name}
+                  className={`building-item ${selectedEnterprise?.name === e.name ? 'active' : ''}`}
+                  onClick={() => handleSelectEnterprise(e)}
+                >
+                  <div className="building-item-dot" style={{ background: '#8b5cf6' }} />
+                  <span className="building-item-name">{e.name}</span>
+                  <span className="building-item-type">{e.totalBuildings}栋</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* View switcher - only when no panel open */}
-        {!selectedBuilding && (
+        {!selectedBuilding && !selectedEnterprise && (
           <div className="view-switcher">
             <button
               className={`view-btn ${viewMode === 'bird' ? 'active' : ''}`}
@@ -104,7 +169,7 @@ export default function App() {
         )}
 
         {/* Building info panel */}
-        {selectedBuilding && viewMode !== 'inside' && (
+        {selectedBuilding && viewMode !== 'inside' && !selectedEnterprise && (
           <div className="info-panel">
             <div className="info-panel-header">
               <span className="info-panel-title">{selectedBuilding.name}</span>
@@ -186,6 +251,77 @@ export default function App() {
               }}>
                 返回鸟瞰
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Enterprise info panel */}
+        {selectedEnterprise && (
+          <div className="info-panel enterprise-panel">
+            <div className="info-panel-header">
+              <span className="info-panel-title">{selectedEnterprise.name}</span>
+              <button className="info-panel-close" onClick={handleCloseEnterprisePanel}>
+                &times;
+              </button>
+            </div>
+            <div className="info-panel-body">
+              <div className="info-row">
+                <span className="info-label">入驻楼栋</span>
+                <span className="info-value">{selectedEnterprise.totalBuildings} 栋</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">占用楼层</span>
+                <span className="info-value">{selectedEnterprise.totalFloors} 层</span>
+              </div>
+              <div className="enterprise-locations">
+                <div className="info-enterprises-title">位置分布</div>
+                {(() => {
+                  const grouped = new Map<string, typeof selectedEnterprise.locations>()
+                  selectedEnterprise.locations.forEach((loc) => {
+                    if (!grouped.has(loc.buildingId)) {
+                      grouped.set(loc.buildingId, [])
+                    }
+                    grouped.get(loc.buildingId)!.push(loc)
+                  })
+                  return Array.from(grouped.entries()).map(([buildingId, locations]) => {
+                    const firstLoc = locations[0]
+                    return (
+                      <div key={buildingId} className="enterprise-building-group">
+                        <div className="enterprise-building-header">
+                          <div className="enterprise-building-info">
+                            <div className="building-item-dot" style={{ background: firstLoc.buildingColor }} />
+                            <span className="enterprise-building-name">{firstLoc.buildingName}</span>
+                          </div>
+                          <button
+                            className="locate-btn"
+                            onClick={() => handleLocateBuilding(buildingId)}
+                          >
+                            定位
+                          </button>
+                        </div>
+                        <div className="enterprise-floors">
+                          {locations.map((loc, idx) => {
+                            const pct = Math.round((loc.occupancy / loc.maxOccupancy) * 100)
+                            const barColor = pct >= 90 ? '#22c55e' : pct >= 70 ? '#f59e0b' : '#ef4444'
+                            return (
+                              <div key={idx} className="floor-row">
+                                <span className="floor-label">{loc.floorName}</span>
+                                <div className="floor-bar-bg">
+                                  <div
+                                    className="floor-bar"
+                                    style={{ width: `${pct}%`, background: barColor }}
+                                  />
+                                </div>
+                                <span className="floor-info">{pct}%</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })
+                })()}
+              </div>
             </div>
           </div>
         )}
